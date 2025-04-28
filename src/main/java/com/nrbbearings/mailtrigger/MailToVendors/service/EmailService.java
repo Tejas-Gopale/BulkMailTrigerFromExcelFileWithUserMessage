@@ -3,12 +3,16 @@ package com.nrbbearings.mailtrigger.MailToVendors.service;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import com.nrbbearings.mailtrigger.MailToVendors.controller.Contact;
 import com.nrbbearings.mailtrigger.MailToVendors.exception.CustomException;
+
+import jakarta.mail.internet.MimeMessage;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -50,14 +54,25 @@ public class EmailService {
     
     }
 
-    public void sendEmail(String to, String subject, String message) {
-        SimpleMailMessage mailMessage = new SimpleMailMessage();
-       mailMessage.setTo(to);
-        mailMessage.setSubject(subject);
-        mailMessage.setText(message);
-        mailSender.send(mailMessage);
-    }
+    public void sendEmailWithAttachments(String to, String subject, String message, List<MultipartFile> attachments) throws Exception {
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true); // true = multipart
 
+        helper.setTo(to);
+        helper.setSubject(subject);
+        helper.setText(message, false); // false means plain text (true = HTML)
+
+        // Attach each file
+        if (attachments != null) {
+            for (MultipartFile file : attachments) {
+                if (!file.isEmpty()) {
+                    helper.addAttachment(file.getOriginalFilename(), new ByteArrayResource(file.getBytes()));
+                }
+            }
+        }
+
+        mailSender.send(mimeMessage);
+    }
     private boolean isValidEmail(String email) {
         // Simple regex for email validation
        return email != null && email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");

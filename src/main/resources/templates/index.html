@@ -40,6 +40,15 @@
             display: none;
             margin-left: 10px;
         }
+        .file-list {
+            margin-top: 10px;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
@@ -58,6 +67,13 @@
                         <label for="subject" class="form-label">Subject</label>
                         <input type="text" class="form-control" id="subject" name="subject" placeholder="Enter email subject" required>
                     </div>
+                    
+                    <div class="mb-3">
+                        <label for="files" class="form-label">Attach Files (optional)</label>
+                        <input class="form-control" type="file" id="files" name="files" multiple>
+                        <div class="file-list" id="fileList"></div>
+                    </div>
+                    
                     <div class="mb-3">
                         <label for="message" class="form-label">Message</label>
                         <textarea class="form-control" id="message" name="message" rows="5" placeholder="Write your message here..." required></textarea>
@@ -87,9 +103,43 @@ document.getElementById('file').addEventListener('change', function() {
     document.getElementById('fileName').textContent = fileName;
 });
 
+// Handle multiple file selection and removal
+const fileInput = document.getElementById('files');
+const fileList = document.getElementById('fileList');
+let selectedFiles = [];
+
+fileInput.addEventListener('change', function() {
+    const files = Array.from(this.files);
+    selectedFiles = selectedFiles.concat(files); // Add new files to the selectedFiles array
+    updateFileList();
+});
+
+function updateFileList() {
+    fileList.innerHTML = ''; // Clear previous file list
+
+    selectedFiles.forEach((file, index) => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+        fileItem.innerHTML = `
+            <span>${file.name}</span>
+            <button type="button" class="btn btn-danger btn-sm" onclick="removeFile(${index})">Remove</button>
+        `;
+        fileList.appendChild(fileItem);
+    });
+}
+
+function removeFile(index) {
+    selectedFiles.splice(index, 1); // Remove the selected file
+    updateFileList(); // Update the displayed file list
+
+    // Update the file input value
+    const dataTransfer = new DataTransfer();
+    selectedFiles.forEach(file => dataTransfer.items.add(file)); // Add remaining files back
+    fileInput.files = dataTransfer.files; // Update the input
+}
+
 // Handle form submit
 document.getElementById('emailForm').addEventListener('submit', function(event) {
-    const fileInput = document.getElementById('file');
     const subjectInput = document.getElementById('subject');
     const messageInput = document.getElementById('message');
     const submitBtn = document.getElementById('submitBtn');
@@ -107,23 +157,20 @@ document.getElementById('emailForm').addEventListener('submit', function(event) 
     spinner.style.display = "inline-block";
 });
 
-
-//Scroll to alert message if present
+// Scroll to alert message if present
 window.onload = function() {
- const successAlert = document.getElementById('successAlert');
- const errorAlert = document.getElementById('errorAlert');
+    const successAlert = document.getElementById('successAlert');
+    const errorAlert = document.getElementById('errorAlert');
 
- if (successAlert || errorAlert) {
-     const alertBox = successAlert || errorAlert;
-     alertBox.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (successAlert || errorAlert) {
+        const alertBox = successAlert || errorAlert;
+        alertBox.scrollIntoView({ behavior: "smooth", block: "center" });
 
-    
-     setTimeout(() => {
-         alertBox.style.display = 'none';
-     }, 5000);
- }
+        setTimeout(() => {
+            alertBox.style.display = 'none';
+        }, 5000);
+    }
 };
 </script>
-
 </body>
 </html>
