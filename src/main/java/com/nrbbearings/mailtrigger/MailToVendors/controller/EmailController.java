@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.nrbbearings.mailtrigger.MailToVendors.exception.CustomException;
 import com.nrbbearings.mailtrigger.MailToVendors.service.EmailService;
@@ -29,29 +30,30 @@ public class EmailController {
 	
     @GetMapping("/")
     public String showUploadForm(Model model) {
-        return "upload"; // Return the Thymeleaf template
+        return "index"; // Return the Thymeleaf template
     }
 
-    @PostMapping("/send-emails")
-    public String sendEmails(@RequestParam("file") MultipartFile file, 
-                             @RequestParam("subject") String subject, 
-                             @RequestParam("message") String message, 
-                             Model model) {
-    	try {
-            List<Contact> contacts = emailService.extractContacts(file.getInputStream());
-            for (Contact contact : contacts) {
-                String personalizedMessage = message.replace("{name}", contact.getName());
-                emailService.sendEmail(contact.getEmail(), subject, personalizedMessage);
-            }
-            model.addAttribute("message", "Emails sent successfully!");
-        } catch (CustomException e) {
-            model.addAttribute("error", e.getMessage());
-        } catch (IOException e) {
-            model.addAttribute("error", "Error reading the file: " + e.getMessage());
-        } catch (Exception e) {
-            model.addAttribute("error", "An unexpected error occurred: " + e.getMessage());
+
+@PostMapping("/send-emails")
+public String sendEmails(@RequestParam("file") MultipartFile file, 
+                         @RequestParam("subject") String subject, 
+                         @RequestParam("message") String message, 
+                         RedirectAttributes redirectAttributes) {
+    try {
+        List<Contact> contacts = emailService.extractContacts(file.getInputStream());
+        for (Contact contact : contacts) {
+            String personalizedMessage = message.replace("{name}", contact.getName());
+            emailService.sendEmail(contact.getEmail(), subject, personalizedMessage);
         }
-        return "upload";
+        redirectAttributes.addFlashAttribute("message", "Emails sent successfully!");
+    } catch (CustomException e) {
+        redirectAttributes.addFlashAttribute("error", e.getMessage());
+    } catch (IOException e) {
+        redirectAttributes.addFlashAttribute("error", "Error reading the file: " + e.getMessage());
+    } catch (Exception e) {
+        redirectAttributes.addFlashAttribute("error", "An unexpected error occurred: " + e.getMessage());
     }
+    return "redirect:/";  
+}
 
 }
